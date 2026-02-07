@@ -1,109 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Anfield Paper Football - Final Edition</title>
+    <title>Anfield Paper Football - Pro Edition</title>
     <style>
-        body { 
-            display: flex; 
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            background: #1a1a1a; 
-            font-family: 'Arial Black', sans-serif; 
-            overflow: hidden; 
-        }
-        
-        /* The Pitch Container */
-        #game-wrapper {
-            position: relative;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
-        }
-
-        canvas { 
-            background: #C8102E; 
-            border: 12px solid #ce933a; 
-            cursor: crosshair; 
-            display: block;
-        }
-
-        /* The Scoreboard Overlay */
-        #scoreboard { 
-            position: absolute; 
-            top: 20px; 
-            left: 20px; 
-            background: rgba(0, 0, 0, 0.9); 
-            padding: 15px 25px; 
-            border-left: 5px solid #f1c40f; 
-            color: white; 
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        #clock-container {
-            text-align: center; 
-            color: #f1c40f; 
-            font-size: 1.5em; 
-            margin-bottom: 10px;
-            border-bottom: 1px solid #444;
-            padding-bottom: 5px;
-        }
-
-        #stoppage-display {
-            font-size: 0.6em; 
-            color: #2ecc71; 
-            visibility: hidden; /* Turned on by JS when time hits 0 */
-        }
-
-        .team-row { 
-            display: flex; 
-            justify-content: space-between; 
-            min-width: 220px; 
-            margin-bottom: 5px; 
-        }
-
+        body { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #1a1a1a; font-family: 'Arial Black', sans-serif; overflow: hidden; }
+        #game-wrapper { position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+        canvas { background: #C8102E; border: 12px solid #ce933a; cursor: crosshair; display: block; }
+        #scoreboard { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.9); padding: 15px 25px; border-left: 5px solid #f1c40f; color: white; pointer-events: none; z-index: 10; }
+        #clock-container { text-align: center; color: #f1c40f; font-size: 1.5em; margin-bottom: 5px; border-bottom: 1px solid #444; }
+        #half-indicator { font-size: 0.4em; color: #aaa; margin-top: 5px; }
+        #ht-summary { font-size: 0.6em; color: #7f8c8d; text-align: center; margin-bottom: 8px; display: none; }
+        #stoppage-display { font-size: 0.5em; color: #2ecc71; visibility: hidden; }
+        .team-row { display: flex; justify-content: space-between; min-width: 220px; margin-bottom: 5px; }
         .score-num { color: #f1c40f; font-size: 1.2em; }
-
-        /* Commentary Box */
-        #commentary { 
-            width: 800px; 
-            background: rgba(0,0,0,0.9); 
-            color: #2ecc71; 
-            padding: 12px; 
-            font-family: 'Courier New', Courier, monospace; 
-            border: 2px solid #ce933a;
-            border-top: none;
-            box-sizing: border-box; 
-            text-align: center; 
-            height: 50px; 
-            text-transform: uppercase;
-        }
+        #commentary { width: 800px; background: rgba(0,0,0,0.9); color: #2ecc71; padding: 12px; font-family: monospace; border: 2px solid #ce933a; border-top: none; text-align: center; height: 50px; text-transform: uppercase; box-sizing: border-box; }
     </style>
 </head>
 <body>
-
-<div id="scoreboard">
-    <div id="clock-container">
-        <span id="match-clock">05:00</span>
-        <div id="stoppage-display">+ <span id="stoppage-time">0</span>s</div>
+    <div id="scoreboard">
+        <div id="clock-container">
+            <div id="half-indicator">1ST HALF</div>
+            <span id="match-clock">05:00</span>
+            <div id="stoppage-display">+ <span id="stoppage-time">0</span>s</div>
+        </div>
+        <div id="ht-summary">HT: <span id="ht-lfc">0</span> - <span id="ht-vis">0</span></div>
+        <div class="team-row"><span>LIVERPOOL</span><span id="lfc-score" class="score-num">0</span></div>
+        <div class="team-row"><span>VISITORS</span><span id="visitor-score" class="score-num">0</span></div>
     </div>
-    <div class="team-row">
-        <span>LIVERPOOL</span>
-        <span id="lfc-score" class="score-num">0</span>
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <div id="commentary">WELCOME TO ANFIELD. KICK-OFF!</div>
     </div>
-    <div class="team-row">
-        <span>VISITORS</span>
-        <span id="visitor-score" class="score-num">0</span>
-    </div>
-</div>
-
-<div id="game-wrapper">
-    <canvas id="gameCanvas" width="800" height="500"></canvas>
-    <div id="commentary">WELCOME TO ANFIELD. WAITING FOR KICK-OFF...</div>
-</div>
-
-<script src="game.js"></script>
-
+    <script src="game.js"></script>
 </body>
 </html>
