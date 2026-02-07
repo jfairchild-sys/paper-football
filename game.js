@@ -8,20 +8,69 @@ const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
 
-    if (type === 'flick') {
+    if (type === 'whistle') {
+        // We create two oscillators to create that "wavering" whistle sound
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const lfo = audioCtx.createOscillator(); // Low Frequency Oscillator for the "pea" rattle
+        const lfoGain = audioCtx.createGain();
+
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        
+        // Classic whistle frequencies
+        osc1.frequency.setValueAtTime(2500, audioCtx.currentTime); 
+        osc2.frequency.setValueAtTime(2515, audioCtx.currentTime); 
+
+        // The "Pea" rattle effect (vibrato)
+        lfo.frequency.value = 30; // 30Hz vibration
+        lfoGain.gain.value = 50; 
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc1.frequency);
+        lfoGain.connect(osc2.frequency);
+
+        // Filter to make it sound less "digital"
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 2500;
+        filter.Q.value = 1;
+
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(filter);
+        filter.connect(audioCtx.destination);
+
+        // Envelope: Sharp start, quick fade
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+
+        lfo.start();
+        osc1.start();
+        osc2.start();
+        
+        osc1.stop(audioCtx.currentTime + 0.6);
+        osc2.stop(audioCtx.currentTime + 0.6);
+        lfo.stop(audioCtx.currentTime + 0.6);
+
+    } else if (type === 'flick') {
+        // Keeping your flick sound the same
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(150, audioCtx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
         gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
         osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+
     } else if (type === 'goal') {
-        const bufferSize = audioCtx.sampleRate * 1.5;
+        // Enhanced "Crowd Roar" using a wider noise buffer
+        const bufferSize = audioCtx.sampleRate * 2;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
@@ -29,16 +78,15 @@ function playSound(type) {
         noise.buffer = buffer;
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'lowpass';
-        filter.frequency.value = 1000;
+        filter.frequency.setValueAtTime(1500, audioCtx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 2);
+        const g = audioCtx.createGain();
+        g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2);
         noise.connect(filter);
-        filter.connect(audioCtx.destination);
+        filter.connect(g);
+        g.connect(audioCtx.destination);
         noise.start();
-    } else if (type === 'whistle') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
     }
 }
 
