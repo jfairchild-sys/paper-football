@@ -291,55 +291,52 @@ function loop() {
     checkScoring(); updateTurnDisplay(); draw(); requestAnimationFrame(loop);
 }
 
-// --- UPDATED SWIPE INPUTS ---
-let lastMouseX, lastMouseY;
-let mouseStartTime;
+// --- CLICK-FREE SWIPE INPUTS ---
+let lastX = 0;
+let lastY = 0;
+let lastTime = 0;
 
-canvas.addEventListener('mousedown', (e) => {
-    if(!gameActive) return;
+canvas.addEventListener('mousemove', (e) => {
+    if (!gameActive) return;
+
     const r = canvas.getBoundingClientRect();
-    startX = e.clientX - r.left;
-    startY = e.clientY - r.top;
+    const currX = e.clientX - r.left;
+    const currY = e.clientY - r.top;
+    const currTime = Date.now();
 
-    // Check if you're clicking near the ball to start the swipe
-    if(Math.hypot(startX - ball.x, startY - ball.y) < 60) {
-        isDragging = true;
-        mouseStartTime = Date.now();
-        lastMouseX = startX;
-        lastMouseY = startY;
-    }
-});
+    // 1. Calculate the distance between the mouse and the ball
+    const dist = Math.hypot(currX - ball.x, currY - ball.y);
 
-window.addEventListener('mouseup', (e) => {
-    if (!isDragging) return;
-    const r = canvas.getBoundingClientRect();
-    const endX = e.clientX - r.left;
-    const endY = e.clientY - r.top;
-    
-    // Calculate the duration of the swipe
-    const duration = (Date.now() - mouseStartTime) / 1000; // in seconds
-    
-    // Calculate velocity: Distance moved / Time taken
-    // We multiply by a PUSH_STRENGTH to scale it to the game physics
-    let swipeVX = (endX - startX) / (duration * 10); 
-    let swipeVY = (endY - startY) / (duration * 10);
+    // 2. If the mouse is moving through the ball
+    if (dist < 40 && (Math.abs(ball.vx) + Math.abs(ball.vy) < 0.5)) {
+        
+        // Calculate velocity based on movement since the last mouse frame
+        const timeDiff = (currTime - lastTime) / 1000; // in seconds
+        if (timeDiff > 0) {
+            let vx = (currX - lastX) / (timeDiff * 150); 
+            let vy = (currY - lastY) / (timeDiff * 150);
 
-    // Caps to prevent the ball from teleporting off the screen
-    const maxSpeed = 25;
-    swipeVX = Math.max(-maxSpeed, Math.min(maxSpeed, swipeVX));
-    swipeVY = Math.max(-maxSpeed, Math.min(maxSpeed, swipeVY));
+            // Cap the speed
+            const maxSpeed = 28;
+            vx = Math.max(-maxSpeed, Math.min(maxSpeed, vx));
+            vy = Math.max(-maxSpeed, Math.min(maxSpeed, vy));
 
-    // Directional Rule: Must flick forward
-    if ((currentTurn === "Liverpool" && swipeVX < 0) || (currentTurn === visitorTeamName && swipeVX > 0)) {
-        logPlay("ILLEGAL MOVE: MUST FLICK FORWARD!");
-        isDragging = false;
-        return;
+            // Direction Check: Only trigger if flicking the right way
+            const isLfcTurn = (currentTurn === "Liverpool" && vx > 2);
+            const isVisTurn = (currentTurn === visitorTeamName && vx < -2);
+
+            if (isLfcTurn || isVisTurn) {
+                ball.vx = vx;
+                ball.vy = vy;
+                handleSteal(); // This triggers the whistle/flick sound and turn logic
+            } else if (Math.abs(vx) > 2) {
+                logPlay("ILLEGAL MOVE: MUST FLICK FORWARD!");
+            }
+        }
     }
 
-    // Apply the physics
-    ball.vx = swipeVX;
-    ball.vy = swipeVY;
-    
-    isDragging = false;
-    handleSteal();
+    // Update trackers for the next frame
+    lastX = currX;
+    lastY = currY;
+    lastTime = currTime;
 });
