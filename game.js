@@ -89,15 +89,12 @@ function startGame(team) {
 
 function updateClock() {
     if (!gameActive) return;
-    if (matchSeconds > 0) {
-        matchSeconds -= (1/60);
-    } else {
+    if (matchSeconds > 0) matchSeconds -= (1/60);
+    else {
         if (stoppageSeconds > 0) {
             document.getElementById('stoppage-display').style.visibility = "visible";
             stoppageSeconds -= (1/60);
-        } else {
-            handleHalfEnd();
-        }
+        } else handleHalfEnd();
     }
     const clockEl = document.getElementById('match-clock');
     if (clockEl) {
@@ -105,8 +102,6 @@ function updateClock() {
         let s = Math.floor(Math.max(0, matchSeconds) % 60);
         clockEl.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }
-    const stopTimeEl = document.getElementById('stoppage-time');
-    if (stopTimeEl) stopTimeEl.innerText = Math.ceil(Math.max(0, stoppageSeconds));
 }
 
 function logPlay(msg) {
@@ -118,55 +113,38 @@ function handleSteal() {
     playSound('flick');
     let taken = (Date.now() - lastMoveTime) / 1000;
     if (taken > 2) stoppageSeconds += (taken - 2);
-
     let roll = Math.floor(Math.random() * 100) + 1;
     let dist = (currentTurn === "Liverpool") ? (800 - ball.x) : ball.x;
     let thresh = dist < 150 ? 40 : (dist < 250 ? 60 : 80);
 
     if (roll > thresh) {
         let foulRoll = Math.floor(Math.random() * 100) + 1;
-        if (foulRoll <= 55) {
-            handleFoul(foulRoll);
-        } else {
+        if (foulRoll <= 55) handleFoul(foulRoll);
+        else {
             currentTurn = (currentTurn === "Liverpool") ? visitorTeamName : "Liverpool";
             stealFeedback = { display: true, status: "STOLEN!", timer: 60 };
             logPlay(`${currentTurn} win it back!`);
         }
-    } else {
-        stealFeedback = { display: true, status: "SAFE", timer: 60 };
-    }
+    } else stealFeedback = { display: true, status: "SAFE", timer: 60 };
     lastMoveTime = Date.now();
 }
 
 function handleFoul(roll) {
-    let type = "";
-    let isPenalty = false;
-    isFoulPause = true;
-
+    let type = ""; let isPenalty = false; isFoulPause = true;
     if (roll <= 5) { type = "RED CARD!"; isPenalty = true; playSound('whistle'); }
-    else if (roll <= 25) { type = "YELLOW CARD!"; }
-    else { type = "FOUL!"; }
-
+    else if (roll <= 25) type = "YELLOW CARD!";
+    else type = "FOUL!";
     if (ball.x < 120 || ball.x > 680) isPenalty = true;
-
-    if (isPenalty) {
-        logPlay(`${type} - PENALTY KICK!`);
-        setupPenaltyKick();
-    } else {
-        logPlay(`${type} - FREE FLICK.`);
-        ball.vx = 0; ball.vy = 0;
-        setTimeout(() => { isFoulPause = false; }, 1000);
-    }
+    if (isPenalty) { logPlay(`${type} - PENALTY KICK!`); setupPenaltyKick(); }
+    else { logPlay(`${type} - FREE FLICK.`); ball.vx = 0; ball.vy = 0; setTimeout(() => { isFoulPause = false; }, 1000); }
     stealFeedback = { display: true, status: type, timer: 120 };
 }
 
 function setupPenaltyKick() {
     ball.vx = 0; ball.vy = 0;
     setTimeout(() => {
-        ball.y = 250;
-        ball.x = (currentTurn === "Liverpool") ? 650 : 150; 
-        logPlay("PENALTY SPOT: SWIPE TO SCORE!");
-        isFoulPause = false; 
+        ball.y = 250; ball.x = (currentTurn === "Liverpool") ? 650 : 150; 
+        logPlay("PENALTY SPOT: SWIPE TO SCORE!"); isFoulPause = false; 
     }, 1500);
 }
 
@@ -181,7 +159,7 @@ function checkScoring() {
                 if (inL) { score.player2++; document.getElementById('visitor-score').innerText = score.player2; currentTurn = "Liverpool"; }
                 else { score.player1++; document.getElementById('lfc-score').innerText = score.player1; currentTurn = visitorTeamName; }
                 goalAnim = { active: true, timer: 120, text: team };
-                logPlay(`GOAL FOR ${team.toUpperCase()}!`); resetBall();
+                resetBall();
             } else {
                 let defTeam = inL ? "Liverpool" : visitorTeamName;
                 let names = keeperMap[defTeam] || ["The Keeper"];
@@ -222,24 +200,39 @@ function startSecondHalf() {
 function draw() {
     ctx.clearRect(0,0,800,500);
     
-    // Pitch
+    // Pitch & Goals
     ctx.strokeStyle="white"; ctx.lineWidth=4; ctx.strokeRect(20,20,760,460);
     ctx.beginPath(); ctx.moveTo(400,20); ctx.lineTo(400,480); ctx.stroke();
     ctx.beginPath(); ctx.arc(400,250,70,0,Math.PI*2); ctx.stroke();
     
-    // Goals
-    ctx.fillStyle="rgba(255,255,255,0.15)";
-    ctx.fillRect(20, 120, 100, 260); ctx.fillRect(680, 120, 100, 260);
-    ctx.strokeRect(20, 120, 100, 260); ctx.strokeRect(680, 120, 100, 260);
+    // Left Goal (Visitor Target)
+    ctx.fillStyle = (currentTurn === visitorTeamName) ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.05)";
+    ctx.fillRect(20, 120, 100, 260); ctx.strokeRect(20, 120, 100, 260);
+    ctx.fillStyle = "white"; ctx.font = "bold 12px Arial"; ctx.textAlign = "center";
+    ctx.fillText(visitorTeamName.toUpperCase(), 70, 110);
 
-    if(lfcLogo.complete){ctx.globalAlpha=0.2; ctx.drawImage(lfcLogo,325,150,150,200); ctx.globalAlpha=1;}
+    // Right Goal (Liverpool Target)
+    ctx.fillStyle = (currentTurn === "Liverpool") ? "rgba(241, 196, 15, 0.2)" : "rgba(255, 255, 255, 0.05)";
+    ctx.fillRect(680, 120, 100, 260); ctx.strokeRect(680, 120, 100, 260);
+    ctx.fillStyle = "white"; ctx.fillText("LIVERPOOL", 730, 110);
+
+    if(lfcLogo.complete){ctx.globalAlpha=0.15; ctx.drawImage(lfcLogo,325,150,150,200); ctx.globalAlpha=1;}
     
+    // POSSESSION ARROW
+    ctx.save();
+    ctx.translate(400, 50);
+    if (currentTurn === visitorTeamName) ctx.scale(-1, 1);
+    ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 6; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(-40, 0); ctx.lineTo(40, 0); ctx.lineTo(25, -15);
+    ctx.moveTo(40, 0); ctx.lineTo(25, 15); ctx.stroke();
+    ctx.restore();
+
     // Ball
     ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(ball.angle);
     ctx.beginPath(); ctx.moveTo(0,-22); ctx.lineTo(22,22); ctx.lineTo(-22,22); ctx.closePath();
     ctx.fillStyle="white"; ctx.fill(); ctx.strokeStyle=(currentTurn==="Liverpool"?"#f1c40f":"#333"); ctx.lineWidth=3; ctx.stroke(); ctx.restore();
 
-    // Cards & Feedback
+    // Feedback
     if (stealFeedback.display) {
         ctx.save();
         if(stealFeedback.status.includes("CARD")) {
@@ -254,15 +247,15 @@ function draw() {
         ctx.save();
         const flash = Math.floor(goalAnim.timer/15)%2===0;
         ctx.fillStyle = flash ? "#C8102E" : "white";
-        ctx.font="bold 80px Arial"; ctx.textAlign="center"; ctx.fillText("GOAL!", 400, 200);
+        ctx.font="bold 80px Arial"; ctx.textAlign="center"; ctx.fillText("GOAL!", 400, 250);
         ctx.restore();
-        goalAnim.timer--; if(goalAnim.timer<=0) goalAnim.active=false;
+        goalAnim.timer--; if(goalAnim.timer <= 0) goalAnim.active = false;
     }
 }
 
 function loop() {
     if (!gameActive) return;
-    updateClock(); // Re-attached!
+    updateClock();
     ball.x+=ball.vx; ball.y+=ball.vy; ball.vx*=FRICTION; ball.vy*=FRICTION;
     if(ball.x<0||ball.x>800||ball.y<0||ball.y>500) resetBall(true);
     checkScoring(); draw(); requestAnimationFrame(loop);
