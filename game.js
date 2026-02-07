@@ -190,10 +190,21 @@ function handleHalfEnd() {
 }
 
 function startSecondHalf() {
-    currentHalf = 2; matchSeconds = 300; stoppageSeconds = 0;
+    currentHalf = 2; 
+    matchSeconds = 300; 
+    stoppageSeconds = 0;
+    
+    // UI Updates
     document.getElementById('stoppage-display').style.visibility = "hidden";
     document.getElementById('half-indicator').innerText = "2ND HALF";
-    gameActive = true; resetBall(); playSound('whistle');
+    
+    gameActive = true; 
+    resetBall(); 
+    playSound('whistle');
+    logPlay("2nd Half Underway!");
+
+    // THE FIX: Restart the animation loop
+    requestAnimationFrame(loop); 
 }
 
 // --- DRAW & LOOP ---
