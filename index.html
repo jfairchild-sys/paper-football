@@ -17,20 +17,34 @@
     </style>
 </head>
 <body>
-    <div id="scoreboard">
-        <div id="clock-container">
-            <div id="half-indicator">1ST HALF</div>
-            <span id="match-clock">05:00</span>
-            <div id="stoppage-display">+ <span id="stoppage-time">0</span>s</div>
-        </div>
-        <div id="ht-summary">HT: <span id="ht-lfc">0</span> - <span id="ht-vis">0</span></div>
-        <div class="team-row"><span>LIVERPOOL</span><span id="lfc-score" class="score-num">0</span></div>
-        <div class="team-row"><span>VISITORS</span><span id="visitor-score" class="score-num">0</span></div>
+
+<div id="team-select-overlay" style="position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
+    <h1 style="color: #f1c40f;">SELECT OPPONENT</h1>
+    <div id="team-buttons" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; max-width: 600px;">
+        <button onclick="startGame('Aston Villa')" style="padding: 15px 25px; cursor: pointer; background: #670E36; color: #95BFE5; border: 2px solid #95BFE5; font-weight: bold;">ASTON VILLA</button>
+        <button onclick="startGame('Man City')" style="padding: 15px 25px; cursor: pointer; background: #6CABDD; color: white; border: 2px solid white; font-weight: bold;">MAN CITY</button>
+        <button onclick="startGame('Man United')" style="padding: 15px 25px; cursor: pointer; background: #DA291C; color: #FBE122; border: 2px solid #FBE122; font-weight: bold;">MAN UNITED</button>
+        <button onclick="startGame('Arsenal')" style="padding: 15px 25px; cursor: pointer; background: #EF0107; color: white; border: 2px solid #DB843D; font-weight: bold;">ARSENAL</button>
+        <button onclick="startGame('Chelsea')" style="padding: 15px 25px; cursor: pointer; background: #034694; color: white; border: 2px solid white; font-weight: bold;">CHELSEA</button>
     </div>
-    <div id="game-wrapper">
-        <canvas id="gameCanvas" width="800" height="500"></canvas>
-        <div id="commentary">WELCOME TO ANFIELD. KICK-OFF!</div>
+</div>
+
+<div id="scoreboard">
+    <div id="clock-container">
+        <div id="half-indicator">1ST HALF</div>
+        <span id="match-clock">05:00</span>
+        <div id="stoppage-display">+ <span id="stoppage-time">0</span>s</div>
     </div>
-    <script src="game.js"></script>
+    <div id="ht-summary">HT: <span id="ht-lfc">0</span> - <span id="ht-vis">0</span></div>
+    <div class="team-row"><span>LIVERPOOL</span><span id="lfc-score" class="score-num">0</span></div>
+    <div class="team-row"><span id="vis-name-label">VISITORS</span><span id="visitor-score" class="score-num">0</span></div>
+</div>
+
+<div id="game-wrapper">
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <div id="commentary">SELECT YOUR TEAMS TO BEGIN</div>
+</div>
+
+<script src="game.js"></script>
 </body>
 </html>
