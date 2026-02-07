@@ -1,50 +1,95 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Anfield Paper Football</title>
+    <title>Anfield Paper Football - Pro Edition</title>
     <style>
-        body { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; background: #1a1a1a; font-family: 'Arial Black', sans-serif; overflow: hidden; }
+        body { 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; background: #1a1a1a; font-family: 'Arial Black', sans-serif; overflow: hidden; 
+        }
+
+        /* Start Menu Overlay */
+        #team-select-overlay {
+            position: absolute; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); z-index: 100; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            color: white; text-align: center;
+        }
+
+        .btn-group { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; max-width: 600px; margin-top: 20px; }
+
+        button { 
+            padding: 15px 25px; cursor: pointer; font-family: 'Arial Black', sans-serif; font-size: 14px;
+            transition: transform 0.2s, filter 0.2s; border-radius: 4px;
+        }
+        button:hover { transform: scale(1.1); filter: brightness(1.2); }
+
+        /* Team Colors */
+        .btn-villa { background: #670E36; color: #95BFE5; border: 2px solid #95BFE5; }
+        .btn-city { background: #6CABDD; color: white; border: 2px solid white; }
+        .btn-utd { background: #DA291C; color: #FBE122; border: 2px solid #FBE122; }
+        .btn-ars { background: #EF0107; color: white; border: 2px solid #DB843D; }
+        .btn-che { background: #034694; color: white; border: 2px solid white; }
+
         #game-wrapper { position: relative; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
         canvas { background: #C8102E; border: 12px solid #ce933a; cursor: crosshair; display: block; }
-        #scoreboard { position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.9); padding: 15px 25px; border-left: 5px solid #f1c40f; color: white; pointer-events: none; z-index: 10; }
+
+        /* Scoreboard UI */
+        #scoreboard { 
+            position: absolute; top: 20px; left: 20px; background: rgba(0, 0, 0, 0.9); 
+            padding: 15px 25px; border-left: 5px solid #f1c40f; color: white; pointer-events: none; z-index: 10;
+        }
         #clock-container { text-align: center; color: #f1c40f; font-size: 1.5em; margin-bottom: 5px; border-bottom: 1px solid #444; }
-        #half-indicator { font-size: 0.4em; color: #aaa; margin-top: 5px; }
+        #half-indicator { font-size: 0.4em; color: #aaa; margin-top: 5px; text-transform: uppercase; }
         #ht-summary { font-size: 0.6em; color: #7f8c8d; text-align: center; margin-bottom: 8px; display: none; }
         #stoppage-display { font-size: 0.5em; color: #2ecc71; visibility: hidden; }
         .team-row { display: flex; justify-content: space-between; min-width: 220px; margin-bottom: 5px; }
         .score-num { color: #f1c40f; font-size: 1.2em; }
-        #commentary { width: 800px; background: rgba(0,0,0,0.9); color: #2ecc71; padding: 12px; font-family: monospace; border: 2px solid #ce933a; border-top: none; text-align: center; height: 50px; text-transform: uppercase; box-sizing: border-box; }
+
+        /* Commentary */
+        #commentary { 
+            width: 800px; background: rgba(0,0,0,0.9); color: #2ecc71; padding: 12px; 
+            font-family: monospace; border: 2px solid #ce933a; border-top: none; 
+            text-align: center; height: 50px; text-transform: uppercase; box-sizing: border-box; 
+        }
     </style>
 </head>
 <body>
 
-<div id="team-select-overlay" style="position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
-    <h1 style="color: #f1c40f;">SELECT OPPONENT</h1>
-    <div id="team-buttons" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; max-width: 600px;">
-        <button onclick="startGame('Aston Villa')" style="padding: 15px 25px; cursor: pointer; background: #670E36; color: #95BFE5; border: 2px solid #95BFE5; font-weight: bold;">ASTON VILLA</button>
-        <button onclick="startGame('Man City')" style="padding: 15px 25px; cursor: pointer; background: #6CABDD; color: white; border: 2px solid white; font-weight: bold;">MAN CITY</button>
-        <button onclick="startGame('Man United')" style="padding: 15px 25px; cursor: pointer; background: #DA291C; color: #FBE122; border: 2px solid #FBE122; font-weight: bold;">MAN UNITED</button>
-        <button onclick="startGame('Arsenal')" style="padding: 15px 25px; cursor: pointer; background: #EF0107; color: white; border: 2px solid #DB843D; font-weight: bold;">ARSENAL</button>
-        <button onclick="startGame('Chelsea')" style="padding: 15px 25px; cursor: pointer; background: #034694; color: white; border: 2px solid white; font-weight: bold;">CHELSEA</button>
+    <div id="team-select-overlay">
+        <h1 style="color: #f1c40f; margin-bottom: 0;">ANFIELD KICK-OFF</h1>
+        <p style="color: #ccc; margin-bottom: 30px;">Choose the Visitor Team</p>
+        <div class="btn-group">
+            <button class="btn-villa" onclick="startGame('Aston Villa')">ASTON VILLA</button>
+            <button class="btn-city" onclick="startGame('Man City')">MAN CITY</button>
+            <button class="btn-utd" onclick="startGame('Man United')">MAN UNITED</button>
+            <button class="btn-ars" onclick="startGame('Arsenal')">ARSENAL</button>
+            <button class="btn-che" onclick="startGame('Chelsea')">CHELSEA</button>
+        </div>
     </div>
-</div>
 
-<div id="scoreboard">
-    <div id="clock-container">
-        <div id="half-indicator">1ST HALF</div>
-        <span id="match-clock">05:00</span>
-        <div id="stoppage-display">+ <span id="stoppage-time">0</span>s</div>
+    <div id="scoreboard">
+        <div id="clock-container">
+            <div id="half-indicator">1ST HALF</div>
+            <span id="match-clock">05:00</span>
+            <div id="stoppage-display">+ <span id="stoppage-time">0</span>s</div>
+        </div>
+        <div id="ht-summary">HT: <span id="ht-lfc">0</span> - <span id="ht-vis">0</span></div>
+        <div class="team-row">
+            <span>LIVERPOOL</span>
+            <span id="lfc-score" class="score-num">0</span>
+        </div>
+        <div class="team-row">
+            <span id="vis-name-label">VISITORS</span>
+            <span id="visitor-score" class="score-num">0</span>
+        </div>
     </div>
-    <div id="ht-summary">HT: <span id="ht-lfc">0</span> - <span id="ht-vis">0</span></div>
-    <div class="team-row"><span>LIVERPOOL</span><span id="lfc-score" class="score-num">0</span></div>
-    <div class="team-row"><span id="vis-name-label">VISITORS</span><span id="visitor-score" class="score-num">0</span></div>
-</div>
 
-<div id="game-wrapper">
-    <canvas id="gameCanvas" width="800" height="500"></canvas>
-    <div id="commentary">SELECT YOUR TEAMS TO BEGIN</div>
-</div>
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <div id="commentary">SELECT OPPONENT TO BEGIN...</div>
+    </div>
 
-<script src="game.js"></script>
+    <script src="game.js"></script>
 </body>
 </html>
