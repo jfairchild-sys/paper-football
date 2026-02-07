@@ -98,7 +98,7 @@ let ball = { x: 400, y: 250, vx: 0, vy: 0, angle: 0 };
 let stealFeedback = { display: false, status: "", timer: 0 };
 let goalAnim = { active: false, timer: 0, text: "" };
 
-const lfcRoster = ["Salah", "Van Dijk", "Alisson", "Mac Allister", "Alexander-Arnold"];
+const lfcRoster = ["Salah", "Van Dijk", "Ekitike", "Mac Allister", "Alexander-Arnold"];
 const keeperMap = {
     "Liverpool": ["Alisson", "Becker", "Alisson the Brick Wall!"],
     "Aston Villa": ["Emiliano Martínez"],
@@ -291,17 +291,55 @@ function loop() {
     checkScoring(); updateTurnDisplay(); draw(); requestAnimationFrame(loop);
 }
 
+// --- UPDATED SWIPE INPUTS ---
+let lastMouseX, lastMouseY;
+let mouseStartTime;
+
 canvas.addEventListener('mousedown', (e) => {
     if(!gameActive) return;
     const r = canvas.getBoundingClientRect();
-    startX = e.clientX - r.left; startY = e.clientY - r.top;
-    if(Math.hypot(startX-ball.x, startY-ball.y)<40) isDragging=true;
+    startX = e.clientX - r.left;
+    startY = e.clientY - r.top;
+
+    // Check if you're clicking near the ball to start the swipe
+    if(Math.hypot(startX - ball.x, startY - ball.y) < 60) {
+        isDragging = true;
+        mouseStartTime = Date.now();
+        lastMouseX = startX;
+        lastMouseY = startY;
+    }
 });
 
 window.addEventListener('mouseup', (e) => {
-    if(!isDragging) return;
+    if (!isDragging) return;
     const r = canvas.getBoundingClientRect();
-    let vx = (e.clientX-r.left-startX)*0.25, vy = (e.clientY-r.top-startY)*0.25;
-    if((currentTurn==="Liverpool"&&vx<0)||(currentTurn===visitorTeamName&&vx>0)){ logPlay("MUST MOVE FORWARD!"); isDragging=false; return; }
-    ball.vx=vx; ball.vy=vy; isDragging=false; handleSteal();
+    const endX = e.clientX - r.left;
+    const endY = e.clientY - r.top;
+    
+    // Calculate the duration of the swipe
+    const duration = (Date.now() - mouseStartTime) / 1000; // in seconds
+    
+    // Calculate velocity: Distance moved / Time taken
+    // We multiply by a PUSH_STRENGTH to scale it to the game physics
+    let swipeVX = (endX - startX) / (duration * 10); 
+    let swipeVY = (endY - startY) / (duration * 10);
+
+    // Caps to prevent the ball from teleporting off the screen
+    const maxSpeed = 25;
+    swipeVX = Math.max(-maxSpeed, Math.min(maxSpeed, swipeVX));
+    swipeVY = Math.max(-maxSpeed, Math.min(maxSpeed, swipeVY));
+
+    // Directional Rule: Must flick forward
+    if ((currentTurn === "Liverpool" && swipeVX < 0) || (currentTurn === visitorTeamName && swipeVX > 0)) {
+        logPlay("ILLEGAL MOVE: MUST FLICK FORWARD!");
+        isDragging = false;
+        return;
+    }
+
+    // Apply the physics
+    ball.vx = swipeVX;
+    ball.vy = swipeVY;
+    
+    isDragging = false;
+    handleSteal();
 });
