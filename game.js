@@ -9,29 +9,25 @@ const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    if (type === 'whistle') {
-        // We create two oscillators to create that "wavering" whistle sound
+if (type === 'whistle') {
         const osc1 = audioCtx.createOscillator();
         const osc2 = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        const lfo = audioCtx.createOscillator(); // Low Frequency Oscillator for the "pea" rattle
+        const lfo = audioCtx.createOscillator(); 
         const lfoGain = audioCtx.createGain();
 
         osc1.type = 'sine';
         osc2.type = 'sine';
         
-        // Classic whistle frequencies
         osc1.frequency.setValueAtTime(2500, audioCtx.currentTime); 
         osc2.frequency.setValueAtTime(2515, audioCtx.currentTime); 
 
-        // The "Pea" rattle effect (vibrato)
-        lfo.frequency.value = 30; // 30Hz vibration
+        lfo.frequency.value = 30; 
         lfoGain.gain.value = 50; 
         lfo.connect(lfoGain);
         lfoGain.connect(osc1.frequency);
         lfoGain.connect(osc2.frequency);
 
-        // Filter to make it sound less "digital"
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'bandpass';
         filter.frequency.value = 2500;
@@ -42,20 +38,20 @@ function playSound(type) {
         gain.connect(filter);
         filter.connect(audioCtx.destination);
 
-        // Envelope: Sharp start, quick fade
+        // --- UPDATED TIMING FOR 1 FULL SECOND ---
         gain.gain.setValueAtTime(0, audioCtx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+        gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05); // Sharp start
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime + 0.8);          // Hold for 0.8s
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.0); // Fade out by 1s
 
         lfo.start();
         osc1.start();
         osc2.start();
         
-        osc1.stop(audioCtx.currentTime + 0.6);
-        osc2.stop(audioCtx.currentTime + 0.6);
-        lfo.stop(audioCtx.currentTime + 0.6);
-
-    } else if (type === 'flick') {
+        osc1.stop(audioCtx.currentTime + 1.0);
+        osc2.stop(audioCtx.currentTime + 1.0);
+        lfo.stop(audioCtx.currentTime + 1.0);
+    }else if (type === 'flick') {
         // Keeping your flick sound the same
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
