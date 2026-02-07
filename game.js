@@ -1,6 +1,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const lfcLogo = new Image();
+let isFoulPause = false;
+
 lfcLogo.src = "https://upload.wikimedia.org/wikipedia/en/thumb/0/0c/Liverpool_FC.svg/1200px-Liverpool_FC.svg.png";
 
 // --- AUDIO ENGINE ---
@@ -217,19 +219,7 @@ function handleSteal() {
     lastMoveTime = Date.now();
 }
 
-function handleFoul(roll, player) {
-    let type = "";
-    let isPenalty = false;
 
-    if (roll <= 5) {
-        type = "RED CARD! SENT OFF!";
-        isPenalty = true;
-        playSound('whistle'); // Extra whistle for drama
-    } else if (roll <= 25) {
-        type = "YELLOW CARD!";
-    } else {
-        type = "FOUL!";
-    }
 
     // Check if foul happened in the penalty area
     if (ball.x < 120 || ball.x > 680) isPenalty = true;
@@ -357,7 +347,7 @@ canvas.addEventListener('mousemove', (e) => {
     const dist = Math.hypot(currX - ball.x, currY - ball.y);
 
     // 2. If the mouse is moving through the ball
-    if (dist < 40 && (Math.abs(ball.vx) + Math.abs(ball.vy) < 0.5)) {
+    if (dist < 40 && (Math.abs(ball.vx) + Math.abs(ball.vy) < 0.5)&& !isFoulPause) {
         
         // Calculate velocity based on movement since the last mouse frame
         const timeDiff = (currTime - lastTime) / 1000; // in seconds
