@@ -178,26 +178,101 @@ function resetBall(out = false) {
 // --- DRAW & LOOP ---
 function draw() {
     ctx.clearRect(0,0,800,500);
-    ctx.strokeStyle="white"; ctx.lineWidth=4; ctx.strokeRect(20,20,760,460);
-    ctx.beginPath(); ctx.moveTo(400,20); ctx.lineTo(400,480); ctx.stroke();
-    if(lfcLogo.complete){ctx.globalAlpha=0.2; ctx.drawImage(lfcLogo,325,150,150,200); ctx.globalAlpha=1;}
     
-    // Ball
-    ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(ball.angle);
-    ctx.beginPath(); ctx.moveTo(0,-22); ctx.lineTo(22,22); ctx.lineTo(-22,22); ctx.closePath();
-    ctx.fillStyle="white"; ctx.fill(); ctx.strokeStyle=(currentTurn==="Liverpool"?"#f1c40f":"#333"); ctx.lineWidth=3; ctx.stroke(); ctx.restore();
+    // --- DRAW PITCH ---
+    ctx.strokeStyle="white"; 
+    ctx.lineWidth=4; 
+    ctx.strokeRect(20,20,760,460); // Touchlines
+    
+    // Halfway Line
+    ctx.beginPath(); 
+    ctx.moveTo(400,20); 
+    ctx.lineTo(400,480); 
+    ctx.stroke();
+    
+    // Center Circle
+    ctx.beginPath(); 
+    ctx.arc(400,250,70,0,Math.PI*2); 
+    ctx.stroke();
 
-    // Feedback & Cards
+    // Goal Boxes (The areas you need to hit!)
+    ctx.fillStyle="rgba(255,255,255,0.15)";
+    ctx.fillRect(20, 120, 100, 260); // Left Goal Area
+    ctx.fillRect(680, 120, 100, 260); // Right Goal Area
+    ctx.strokeRect(20, 120, 100, 260);
+    ctx.strokeRect(680, 120, 100, 260);
+
+    // Penalty Spots
+    ctx.fillStyle = "white";
+    ctx.beginPath(); ctx.arc(150, 250, 5, 0, Math.PI*2); ctx.fill(); // Left Spot
+    ctx.beginPath(); ctx.arc(650, 250, 5, 0, Math.PI*2); ctx.fill(); // Right Spot
+    
+    // Liverpool Crest (Watermark)
+    if(lfcLogo.complete){
+        ctx.globalAlpha=0.15; 
+        ctx.drawImage(lfcLogo,325,150,150,200); 
+        ctx.globalAlpha=1;
+    }
+    
+    // --- POSSESSION ARROW ---
+    ctx.save();
+    ctx.translate(400, 50);
+    if (currentTurn === visitorTeamName) ctx.scale(-1, 1);
+    ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 4; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(-30, 0); ctx.lineTo(30, 0); ctx.lineTo(20, -10);
+    ctx.moveTo(30, 0); ctx.lineTo(20, 10); ctx.stroke();
+    ctx.restore();
+
+    // --- BALL ---
+    ctx.save(); 
+    ctx.translate(ball.x, ball.y); 
+    ctx.rotate(ball.angle);
+    ctx.beginPath(); 
+    ctx.moveTo(0,-22); ctx.lineTo(22,22); ctx.lineTo(-22,22); 
+    ctx.closePath();
+    ctx.fillStyle="white"; 
+    ctx.fill(); 
+    ctx.strokeStyle=(currentTurn==="Liverpool"?"#f1c40f":"#333"); 
+    ctx.lineWidth=3; 
+    ctx.stroke(); 
+    ctx.restore();
+
+    // --- FEEDBACK & CARDS ---
     if (stealFeedback.display) {
-        ctx.save(); ctx.font = "bold 24px Arial"; ctx.textAlign = "center";
-        ctx.fillStyle = stealFeedback.status.includes("CARD") ? (stealFeedback.status.includes("RED") ? "red" : "yellow") : "white";
-        ctx.fillText(stealFeedback.status, ball.x, ball.y - 60);
-        if(stealFeedback.status.includes("CARD")) {
-            ctx.fillStyle = stealFeedback.status.includes("RED") ? "red" : "yellow";
-            ctx.fillRect(720, 40, 40, 60); ctx.strokeRect(720, 40, 40, 60);
+        ctx.save(); 
+        ctx.font = "bold 24px Arial"; 
+        ctx.textAlign = "center";
+        
+        // Flash Red or Yellow text if it's a card
+        if (stealFeedback.status.includes("CARD")) {
+            ctx.fillStyle = stealFeedback.status.includes("RED") ? "#ff0000" : "#f1c40f";
+            // Draw the Card Graphic
+            ctx.fillRect(720, 40, 40, 60);
+            ctx.strokeStyle = "white";
+            ctx.strokeRect(720, 40, 40, 60);
+        } else {
+            ctx.fillStyle = "white";
         }
+        
+        ctx.fillText(stealFeedback.status, ball.x, ball.y - 60);
         ctx.restore();
-        stealFeedback.timer--; if (stealFeedback.timer <= 0) stealFeedback.display = false;
+        
+        stealFeedback.timer--; 
+        if (stealFeedback.timer <= 0) stealFeedback.display = false;
+    }
+
+    // --- GOAL ANIMATION ---
+    if(goalAnim.active){
+        ctx.save();
+        const flash = Math.floor(goalAnim.timer/15)%2===0;
+        ctx.fillStyle = flash ? "#C8102E" : "white";
+        ctx.font="bold 80px Arial"; ctx.textAlign="center"; 
+        ctx.fillText("GOAL!", 400, 200);
+        ctx.font="bold 30px Arial"; ctx.fillStyle="white"; 
+        ctx.fillText(goalAnim.text.toUpperCase(), 400, 250);
+        ctx.restore();
+        goalAnim.timer--; 
+        if(goalAnim.timer<=0) goalAnim.active=false;
     }
 }
 
