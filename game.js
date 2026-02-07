@@ -17,6 +17,15 @@ let goalAnim = { active: false, timer: 0, text: "" };
 // ROSTERS
 const lfcRoster = ["Salah", "Van Dijk", "Alisson", "Mac Allister", "Alexander-Arnold"];
 const visRoster = ["The Opponent"]; // Generic for visitors
+const keeperMap = {
+    "Liverpool": ["Alisson", "Becker", "Alisson the Brick Wall!"],
+    "Aston Villa": ["Emiliano Martínez"],
+    "Man City": ["Ederson"],
+    "Man United": ["André Onana"],
+    "Arsenal": ["David Raya"],
+    "Chelsea": ["Robert Sánchez"]
+};
+
 
 // COMMENTARY VARIATIONS
 const stealPhrases = [
@@ -146,12 +155,15 @@ function handleSteal() {
     lastMoveTime = Date.now();
 }
 
+// --- Replace your checkScoring function with this ---
 function checkScoring() {
     if (Math.abs(ball.vx) < 0.8 && Math.abs(ball.vy) < 0.8) {
         let inL = (ball.x < 120 && ball.y > 120 && ball.y < 380);
         let inR = (ball.x > 680 && ball.y > 120 && ball.y < 380);
+        
         if (inL || inR) {
             if (Math.random() < 0.5) { 
+                // GOAL LOGIC
                 let team = inL ? visitorTeamName : "Liverpool";
                 const lfcPlayer = lfcRoster[Math.floor(Math.random() * lfcRoster.length)];
                 
@@ -169,10 +181,16 @@ function checkScoring() {
                 goalAnim = { active: true, timer: 120, text: team };
                 resetBall();
             } else {
-                let def = inL ? "Liverpool" : visitorTeamName;
-                logPlay(`WHAT A SAVE by the ${def} keeper!`);
+                // SAVE LOGIC (Updated with Keeper Names)
+                let defTeam = inL ? "Liverpool" : visitorTeamName;
+                let keeperList = keeperMap[defTeam] || ["The Keeper"];
+                let keeperName = keeperList[Math.floor(Math.random() * keeperList.length)];
+                
+                logPlay(`UNBELIEVABLE SAVE BY ${keeperName.toUpperCase()}!`);
+                
                 stealFeedback = { display: true, status: "SAVED!", timer: 90 };
-                currentTurn = def; ball.vx = inL ? 15 : -15;
+                currentTurn = defTeam; 
+                ball.vx = inL ? 15 : -15;
             }
         }
     }
