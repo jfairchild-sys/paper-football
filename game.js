@@ -190,22 +190,71 @@ function handleSteal() {
     playSound('flick');
     let taken = (Date.now() - lastMoveTime) / 1000;
     if (taken > 2) stoppageSeconds += (taken - 2);
+
     let roll = Math.floor(Math.random() * 100) + 1;
     let dist = (currentTurn === "Liverpool") ? (800 - ball.x) : ball.x;
     let thresh = dist < 150 ? 40 : (dist < 250 ? 60 : 80);
 
     const lfcPlayer = lfcRoster[Math.floor(Math.random() * lfcRoster.length)];
-    const phrase = Math.floor(Math.random() * stealPhrases.length);
 
     if (roll > thresh) {
-        currentTurn = (currentTurn === "Liverpool") ? visitorTeamName : "Liverpool";
-        stealFeedback = { display: true, status: "STOLEN!", timer: 60 };
-        logPlay(currentTurn === "Liverpool" ? `${lfcPlayer} ${stealPhrases[phrase]}` : `${visitorTeamName} win it back!`);
+        // A steal attempt happened... let's check for a FOUL
+        let foulRoll = Math.floor(Math.random() * 100) + 1;
+
+        if (foulRoll <= 55) { // 5% Red + 20% Yellow + 30% Normal = 55% total foul chance on steals
+            handleFoul(foulRoll, lfcPlayer);
+        } else {
+            // Clean Steal
+            currentTurn = (currentTurn === "Liverpool") ? visitorTeamName : "Liverpool";
+            stealFeedback = { display: true, status: "STOLEN!", timer: 60 };
+            logPlay(currentTurn === "Liverpool" ? `${lfcPlayer} win it back cleanly!` : `${visitorTeamName} intercepts!`);
+        }
     } else {
+        // Safe play
         stealFeedback = { display: true, status: "SAFE", timer: 60 };
-        logPlay(currentTurn === "Liverpool" ? `${lfcPlayer} ${movePhrases[phrase]}` : `${visitorTeamName} on the move!`);
+        logPlay(currentTurn === "Liverpool" ? `${lfcPlayer} keeps possession.` : `${visitorTeamName} moving well.`);
     }
     lastMoveTime = Date.now();
+}
+
+function handleFoul(roll, player) {
+    let type = "";
+    let isPenalty = false;
+
+    if (roll <= 5) {
+        type = "RED CARD! SENT OFF!";
+        isPenalty = true;
+        playSound('whistle'); // Extra whistle for drama
+    } else if (roll <= 25) {
+        type = "YELLOW CARD!";
+    } else {
+        type = "FOUL!";
+    }
+
+    // Check if foul happened in the penalty area
+    if (ball.x < 120 || ball.x > 680) isPenalty = true;
+
+    if (isPenalty) {
+        logPlay(`${type} PENALTY GIVEN TO ${currentTurn.toUpperCase()}!`);
+        setupPenaltyKick();
+    } else {
+        logPlay(`${type} Free flick for ${currentTurn.toUpperCase()}.`);
+        ball.vx = 0; ball.vy = 0; // Stop ball for free flick
+    }
+    
+    stealFeedback = { display: true, status: type, timer: 90 };
+}
+
+function setupPenaltyKick() {
+    gameActive = false; // Pause briefly
+    setTimeout(() => {
+        ball.vx = 0; ball.vy = 0;
+        ball.y = 250; // Center vertically
+        // Place on the penalty spot
+        ball.x = (currentTurn === "Liverpool") ? 650 : 150; 
+        logPlay("PENALTY SPOT: TAKE YOUR SHOT!");
+        gameActive = true;
+    }, 1000);
 }
 
 function checkScoring() {
