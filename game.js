@@ -84,17 +84,21 @@ function startGame(team) {
     gameActive = true;
     currentTurn = Math.random() < 0.5 ? "Liverpool" : visitorTeamName;
     playSound('whistle');
+    logPlay(`Kick-off! ${currentTurn} starts.`);
     loop();
 }
 
 function updateClock() {
     if (!gameActive) return;
-    if (matchSeconds > 0) matchSeconds -= (1/60);
-    else {
+    if (matchSeconds > 0) {
+        matchSeconds -= (1/60);
+    } else {
         if (stoppageSeconds > 0) {
             document.getElementById('stoppage-display').style.visibility = "visible";
             stoppageSeconds -= (1/60);
-        } else handleHalfEnd();
+        } else {
+            handleHalfEnd();
+        }
     }
     const clockEl = document.getElementById('match-clock');
     if (clockEl) {
@@ -106,7 +110,9 @@ function updateClock() {
 
 function logPlay(msg) {
     const box = document.getElementById('commentary');
-    if (box) box.innerText = msg.toUpperCase();
+    if (box) {
+        box.innerText = msg.toUpperCase();
+    }
 }
 
 function handleSteal() {
@@ -125,7 +131,11 @@ function handleSteal() {
             stealFeedback = { display: true, status: "STOLEN!", timer: 60 };
             logPlay(`${currentTurn} win it back!`);
         }
-    } else stealFeedback = { display: true, status: "SAFE", timer: 60 };
+    } else {
+        const lfcPlayer = lfcRoster[Math.floor(Math.random() * lfcRoster.length)];
+        logPlay(currentTurn === "Liverpool" ? `${lfcPlayer} keeps it moving...` : `${visitorTeamName} on the attack!`);
+        stealFeedback = { display: true, status: "SAFE", timer: 60 };
+    }
     lastMoveTime = Date.now();
 }
 
@@ -159,7 +169,7 @@ function checkScoring() {
                 if (inL) { score.player2++; document.getElementById('visitor-score').innerText = score.player2; currentTurn = "Liverpool"; }
                 else { score.player1++; document.getElementById('lfc-score').innerText = score.player1; currentTurn = visitorTeamName; }
                 goalAnim = { active: true, timer: 120, text: team };
-                resetBall();
+                logPlay(`GOAL FOR ${team.toUpperCase()}!`); resetBall();
             } else {
                 let defTeam = inL ? "Liverpool" : visitorTeamName;
                 let names = keeperMap[defTeam] || ["The Keeper"];
@@ -190,24 +200,16 @@ function handleHalfEnd() {
 }
 
 function startSecondHalf() {
-    currentHalf = 2; 
-    matchSeconds = 300; 
-    stoppageSeconds = 0;
-    
-    // UI Updates
+    currentHalf = 2; matchSeconds = 300; stoppageSeconds = 0;
     document.getElementById('stoppage-display').style.visibility = "hidden";
     document.getElementById('half-indicator').innerText = "2ND HALF";
-    
     gameActive = true; 
     resetBall(); 
     playSound('whistle');
     logPlay("2nd Half Underway!");
-
-    // THE FIX: Restart the animation loop
-    requestAnimationFrame(loop); 
+    requestAnimationFrame(loop); // Restart the engine
 }
 
-// --- DRAW & LOOP ---
 function draw() {
     ctx.clearRect(0,0,800,500);
     
