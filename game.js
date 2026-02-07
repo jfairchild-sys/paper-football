@@ -13,7 +13,6 @@ let ball = { x: 400, y: 250, vx: 0, vy: 0, angle: 0 };
 let stealFeedback = { display: false, status: "", timer: 0 };
 let goalAnim = { active: false, timer: 0, text: "" };
 
-// MATCH STATE
 let matchSeconds = 300; 
 let stoppageSeconds = 0;
 let currentHalf = 1;
@@ -35,24 +34,33 @@ function updateClock() {
     if (matchSeconds > 0) matchSeconds -= (1/60);
     else {
         if (stoppageSeconds > 0) {
-            document.getElementById('stoppage-display').style.visibility = "visible";
+            const stopDisp = document.getElementById('stoppage-display');
+            if (stopDisp) stopDisp.style.visibility = "visible";
             stoppageSeconds -= (1/60);
         } else {
             handleHalfEnd();
         }
     }
-    let m = Math.floor(Math.max(0, matchSeconds) / 60);
-    let s = Math.floor(Math.max(0, matchSeconds) % 60);
-    document.getElementById('match-clock').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-    document.getElementById('stoppage-time').innerText = Math.ceil(stoppageSeconds);
+    const clockEl = document.getElementById('match-clock');
+    const stopTimeEl = document.getElementById('stoppage-time');
+    if (clockEl && stopTimeEl) {
+        let m = Math.floor(Math.max(0, matchSeconds) / 60);
+        let s = Math.floor(Math.max(0, matchSeconds) % 60);
+        clockEl.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        stopTimeEl.innerText = Math.ceil(stoppageSeconds);
+    }
 }
 
 function handleHalfEnd() {
     gameActive = false;
+    const htLfc = document.getElementById('ht-lfc');
+    const htVis = document.getElementById('ht-vis');
+    const htSum = document.getElementById('ht-summary');
+    
     if (currentHalf === 1) {
-        document.getElementById('ht-lfc').innerText = score.player1;
-        document.getElementById('ht-vis').innerText = score.player2;
-        document.getElementById('ht-summary').style.display = "block";
+        if (htLfc) htLfc.innerText = score.player1;
+        if (htVis) htVis.innerText = score.player2;
+        if (htSum) htSum.style.display = "block";
         logPlay("HALF TIME! CLICK TO START 2ND HALF");
         setTimeout(() => { if(confirm("Start 2nd Half?")) startSecondHalf(); }, 500);
     } else {
@@ -63,8 +71,10 @@ function handleHalfEnd() {
 
 function startSecondHalf() {
     currentHalf = 2; matchSeconds = 300; stoppageSeconds = 0;
-    document.getElementById('stoppage-display').style.visibility = "hidden";
-    document.getElementById('half-indicator').innerText = "2ND HALF";
+    const stopDisp = document.getElementById('stoppage-display');
+    const halfInd = document.getElementById('half-indicator');
+    if (stopDisp) stopDisp.style.visibility = "hidden";
+    if (halfInd) halfInd.innerText = "2ND HALF";
     gameActive = true; resetBall(); logPlay("2nd Half Kick-off!");
 }
 
@@ -78,6 +88,7 @@ function resetBall(out = false) {
         ball.x = 400; ball.y = 250;
     }
     ball.vx = 0; ball.vy = 0; lastMoveTime = Date.now();
+    updateTurnDisplay();
 }
 
 function handleSteal() {
@@ -103,8 +114,17 @@ function checkScoring() {
         if (inL || inR) {
             if (Math.random() < 0.5) { 
                 let team = inL ? "Visitors" : "Liverpool";
-                if (inL) { score.player2++; document.getElementById('visitor-score').innerText = score.player2; currentTurn = "Liverpool"; }
-                else { score.player1++; document.getElementById('lfc-score').innerText = score.player1; currentTurn = "Visitors"; }
+                const lfcS = document.getElementById('lfc-score');
+                const visS = document.getElementById('visitor-score');
+                if (inL) { 
+                    score.player2++; 
+                    if(visS) visS.innerText = score.player2; 
+                    currentTurn = "Liverpool"; 
+                } else { 
+                    score.player1++; 
+                    if(lfcS) lfcS.innerText = score.player1; 
+                    currentTurn = "Visitors"; 
+                }
                 goalAnim = { active: true, timer: 120, text: team };
                 logPlay("GOAL!"); resetBall();
             } else {
@@ -115,24 +135,27 @@ function checkScoring() {
     }
 }
 
-// --- NEW/FIXED DRAW FUNCTIONS ---
-function drawPitch() {
+function updateTurnDisplay() {
+    const lfcEl = document.getElementById('lfc-score');
+    const visEl = document.getElementById('visitor-score');
+    if(lfcEl && visEl) {
+        lfcEl.parentElement.style.color = (currentTurn === "Liverpool") ? "#f1c40f" : "white";
+        visEl.parentElement.style.color = (currentTurn === "Visitors") ? "#f1c40f" : "white";
+    }
+}
+
+function draw() {
+    ctx.clearRect(0,0,800,500);
+    // Pitch
     ctx.strokeStyle="white"; ctx.lineWidth=4; ctx.strokeRect(20,20,760,460);
     ctx.beginPath(); ctx.moveTo(400,20); ctx.lineTo(400,480); ctx.stroke();
     ctx.beginPath(); ctx.arc(400,250,70,0,Math.PI*2); ctx.stroke();
     ctx.fillStyle="rgba(255,255,255,0.1)"; ctx.fillRect(20,120,100,260); ctx.fillRect(680,120,100,260);
     if(lfcLogo.complete){ctx.globalAlpha=0.2; ctx.drawImage(lfcLogo,325,150,150,200); ctx.globalAlpha=1;}
-}
-
-function drawBall() {
-    ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(ball.angle);
-    ctx.beginPath(); ctx.moveTo(0,-22); ctx.lineTo(22,22); ctx.lineTo(-22,22); ctx.closePath();
-    ctx.fillStyle="white"; ctx.fill(); ctx.strokeStyle=(currentTurn==="Liverpool"?"#f1c40f":"#333"); ctx.lineWidth=3; ctx.stroke(); ctx.restore();
-}
-
-function drawPossessionArrow() {
+    
+    // Possession Arrow
     ctx.save();
-    ctx.translate(canvas.width / 2, 50);
+    ctx.translate(400, 50);
     if (currentTurn === "Visitors") ctx.scale(-1, 1);
     ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 4; ctx.lineJoin = "round";
     ctx.beginPath(); ctx.moveTo(-30, 0); ctx.lineTo(30, 0); ctx.lineTo(20, -10);
@@ -141,45 +164,36 @@ function drawPossessionArrow() {
     ctx.fillStyle = "white"; ctx.font = "bold 12px Arial"; ctx.textAlign = "center";
     ctx.fillText("ATTACK DIRECTION", 0, 25);
     ctx.restore();
-}
 
-function drawUI() {
+    // Ball
+    ctx.save(); ctx.translate(ball.x, ball.y); ctx.rotate(ball.angle);
+    ctx.beginPath(); ctx.moveTo(0,-22); ctx.lineTo(22,22); ctx.lineTo(-22,22); ctx.closePath();
+    ctx.fillStyle="white"; ctx.fill(); ctx.strokeStyle=(currentTurn==="Liverpool"?"#f1c40f":"#333"); ctx.lineWidth=3; ctx.stroke(); ctx.restore();
+
+    // UI Feedback
     if (stealFeedback.display) {
         ctx.save(); ctx.font = "bold 24px Arial"; ctx.textAlign = "center";
         ctx.fillStyle = (stealFeedback.status === "SAFE") ? "#2ecc71" : "#f1c40f";
         ctx.fillText(stealFeedback.status, ball.x, ball.y - 60); ctx.restore();
         stealFeedback.timer--; if (stealFeedback.timer <= 0) stealFeedback.display = false;
     }
-    if (goalAnim.active) {
-        ctx.save(); const flash = Math.floor(goalAnim.timer / 15) % 2 === 0; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.font = "bold 80px Arial"; ctx.fillStyle = flash ? "#C8102E" : "white";
-        ctx.fillText("GOAL!", 400, 200);
-        ctx.font = "bold 30px Arial"; ctx.fillStyle = "white"; ctx.fillText(goalAnim.text.toUpperCase(), 400, 250);
+    if(goalAnim.active){
+        ctx.save();
+        const flash = Math.floor(goalAnim.timer/15)%2===0;
+        ctx.fillStyle = flash ? "#C8102E" : "white";
+        ctx.font="bold 80px Arial"; ctx.textAlign="center"; ctx.fillText("GOAL!", 400, 200);
+        ctx.font="bold 30px Arial"; ctx.fillStyle="white"; ctx.fillText(goalAnim.text.toUpperCase(), 400, 250);
         ctx.restore();
-        goalAnim.timer--; if (goalAnim.timer <= 0) goalAnim.active = false;
+        goalAnim.timer--; if(goalAnim.timer<=0) goalAnim.active=false;
     }
 }
 
 function loop() {
-    ctx.clearRect(0,0,800,500);
     updateClock();
-    
-    // Physical elements
-    drawPitch();
-    drawBall();
-    
-    // UI elements
-    drawPossessionArrow();
-    drawUI();
-    
-    // Physics
     ball.x+=ball.vx; ball.y+=ball.vy; ball.vx*=FRICTION; ball.vy*=FRICTION;
     if(ball.x<0||ball.x>800||ball.y<0||ball.y>500) resetBall(true);
     ball.angle += (Math.abs(ball.vx)+Math.abs(ball.vy))*0.05;
-    
-    checkScoring();
-    updateTurnDisplay();
-    requestAnimationFrame(loop);
+    checkScoring(); updateTurnDisplay(); draw(); requestAnimationFrame(loop);
 }
 
 canvas.addEventListener('mousedown', (e) => {
@@ -197,5 +211,4 @@ window.addEventListener('mouseup', (e) => {
     ball.vx=vx; ball.vy=vy; isDragging=false; handleSteal();
 });
 
-updateTurnDisplay();
 loop();
