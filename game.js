@@ -7,19 +7,52 @@ const FRICTION = 0.95;
 const BALL_SIZE = 22;
 const PUSH_STRENGTH = 0.25;
 
+let visitorTeamName = "Visitors";
 let score = { player1: 0, player2: 0 };
-let currentTurn = Math.random() < 0.5 ? "Liverpool" : "Visitors";
+let currentTurn = "Liverpool"; 
 let ball = { x: 400, y: 250, vx: 0, vy: 0, angle: 0 };
 let stealFeedback = { display: false, status: "", timer: 0 };
 let goalAnim = { active: false, timer: 0, text: "" };
 
+// ROSTERS
+const lfcRoster = ["Salah", "Van Dijk", "Alisson", "Mac Allister", "Alexander-Arnold"];
+const visRoster = ["The Opponent"]; // Generic for visitors
+
+// COMMENTARY VARIATIONS
+const stealPhrases = [
+    "snatches the ball away!",
+    "with a brilliant interception!",
+    "picks their pocket!",
+    "wins the battle for possession!",
+    "reads the play perfectly!"
+];
+
+const movePhrases = [
+    "drives forward!",
+    "looks for an opening...",
+    "threads the needle!",
+    "advances the play.",
+    "is looking dangerous!"
+];
+
+// MATCH STATE
 let matchSeconds = 300; 
 let stoppageSeconds = 0;
 let currentHalf = 1;
-let gameActive = true;
+let gameActive = false; // Starts false until team is selected
 let lastMoveTime = Date.now();
 let isDragging = false;
 let startX, startY;
+
+function startGame(team) {
+    visitorTeamName = team;
+    document.getElementById('vis-name-label').innerText = team.toUpperCase();
+    document.getElementById('team-select-overlay').style.display = "none";
+    gameActive = true;
+    currentTurn = Math.random() < 0.5 ? "Liverpool" : visitorTeamName;
+    logPlay(`Kick-off at Anfield! ${currentTurn} start.`);
+    loop();
+}
 
 function logPlay(msg) {
     const box = document.getElementById('commentary');
@@ -34,75 +67,81 @@ function updateClock() {
     if (matchSeconds > 0) matchSeconds -= (1/60);
     else {
         if (stoppageSeconds > 0) {
-            const stopDisp = document.getElementById('stoppage-display');
-            if (stopDisp) stopDisp.style.visibility = "visible";
+            document.getElementById('stoppage-display').style.visibility = "visible";
             stoppageSeconds -= (1/60);
         } else {
             handleHalfEnd();
         }
     }
-    const clockEl = document.getElementById('match-clock');
-    const stopTimeEl = document.getElementById('stoppage-time');
-    if (clockEl && stopTimeEl) {
-        let m = Math.floor(Math.max(0, matchSeconds) / 60);
-        let s = Math.floor(Math.max(0, matchSeconds) % 60);
-        clockEl.innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-        stopTimeEl.innerText = Math.ceil(stoppageSeconds);
-    }
+    const m = Math.floor(Math.max(0, matchSeconds) / 60);
+    const s = Math.floor(Math.max(0, matchSeconds) % 60);
+    document.getElementById('match-clock').innerText = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    document.getElementById('stoppage-time').innerText = Math.ceil(stoppageSeconds);
 }
 
 function handleHalfEnd() {
     gameActive = false;
-    const htLfc = document.getElementById('ht-lfc');
-    const htVis = document.getElementById('ht-vis');
-    const htSum = document.getElementById('ht-summary');
-    
     if (currentHalf === 1) {
-        if (htLfc) htLfc.innerText = score.player1;
-        if (htVis) htVis.innerText = score.player2;
-        if (htSum) htSum.style.display = "block";
+        document.getElementById('ht-lfc').innerText = score.player1;
+        document.getElementById('ht-vis').innerText = score.player2;
+        document.getElementById('ht-summary').style.display = "block";
         logPlay("HALF TIME! CLICK TO START 2ND HALF");
         setTimeout(() => { if(confirm("Start 2nd Half?")) startSecondHalf(); }, 500);
     } else {
         logPlay("FULL TIME!");
-        alert(`Match Ended! LFC ${score.player1} - ${score.player2} Visitors`);
+        alert(`Final Score: Liverpool ${score.player1} - ${score.player2} ${visitorTeamName}`);
     }
 }
 
 function startSecondHalf() {
     currentHalf = 2; matchSeconds = 300; stoppageSeconds = 0;
-    const stopDisp = document.getElementById('stoppage-display');
-    const halfInd = document.getElementById('half-indicator');
-    if (stopDisp) stopDisp.style.visibility = "hidden";
-    if (halfInd) halfInd.innerText = "2ND HALF";
-    gameActive = true; resetBall(); logPlay("2nd Half Kick-off!");
+    document.getElementById('stoppage-display').style.visibility = "hidden";
+    document.getElementById('half-indicator').innerText = "2ND HALF";
+    gameActive = true; resetBall(); logPlay("2nd Half Underway!");
 }
 
 function resetBall(out = false) {
     if (out) {
         let prev = currentTurn;
-        currentTurn = (currentTurn === "Liverpool") ? "Visitors" : "Liverpool";
-        logPlay(`${prev} out of bounds! Turnover to ${currentTurn}.`);
+        currentTurn = (currentTurn === "Liverpool") ? visitorTeamName : "Liverpool";
+        logPlay(`${prev} out of bounds! Ball to ${currentTurn}.`);
         ball.x = 100 + Math.random() * 600; ball.y = 100 + Math.random() * 300;
     } else {
         ball.x = 400; ball.y = 250;
     }
     ball.vx = 0; ball.vy = 0; lastMoveTime = Date.now();
-    updateTurnDisplay();
 }
 
 function handleSteal() {
     let taken = (Date.now() - lastMoveTime) / 1000;
     if (taken > 2) stoppageSeconds += (taken - 2);
+
     let roll = Math.floor(Math.random() * 100) + 1;
     let dist = (currentTurn === "Liverpool") ? (800 - ball.x) : ball.x;
     let thresh = dist < 150 ? 40 : (dist < 250 ? 60 : 80);
+
+    const lfcPlayer = lfcRoster[Math.floor(Math.random() * lfcRoster.length)];
+    const phrase = Math.floor(Math.random() * 5);
+
     if (roll > thresh) {
-        currentTurn = (currentTurn === "Liverpool") ? "Visitors" : "Liverpool";
+        // TURN SWAP (Steal)
+        const oldTurn = currentTurn;
+        currentTurn = (currentTurn === "Liverpool") ? visitorTeamName : "Liverpool";
         stealFeedback = { display: true, status: "STOLEN!", timer: 60 };
-        logPlay("INTERCEPTED!");
+        
+        if (currentTurn === "Liverpool") {
+            logPlay(`${lfcPlayer} ${stealPhrases[phrase]} Liverpool ball!`);
+        } else {
+            logPlay(`${visitorTeamName} win it back! Possession turnover.`);
+        }
     } else {
+        // SUCCESSFUL MOVE
         stealFeedback = { display: true, status: "SAFE", timer: 60 };
+        if (currentTurn === "Liverpool") {
+            logPlay(`${lfcPlayer} ${movePhrases[phrase]}`);
+        } else {
+            logPlay(`${visitorTeamName} on the attack!`);
+        }
     }
     lastMoveTime = Date.now();
 }
@@ -113,34 +152,29 @@ function checkScoring() {
         let inR = (ball.x > 680 && ball.y > 120 && ball.y < 380);
         if (inL || inR) {
             if (Math.random() < 0.5) { 
-                let team = inL ? "Visitors" : "Liverpool";
-                const lfcS = document.getElementById('lfc-score');
-                const visS = document.getElementById('visitor-score');
+                let team = inL ? visitorTeamName : "Liverpool";
+                const lfcPlayer = lfcRoster[Math.floor(Math.random() * lfcRoster.length)];
+                
                 if (inL) { 
                     score.player2++; 
-                    if(visS) visS.innerText = score.player2; 
+                    document.getElementById('visitor-score').innerText = score.player2; 
                     currentTurn = "Liverpool"; 
+                    logPlay(`GOAL! ${visitorTeamName} strike!`);
                 } else { 
                     score.player1++; 
-                    if(lfcS) lfcS.innerText = score.player1; 
-                    currentTurn = "Visitors"; 
+                    document.getElementById('lfc-score').innerText = score.player1; 
+                    currentTurn = visitorTeamName; 
+                    logPlay(`GOAL! ${lfcPlayer} finds the net!`);
                 }
                 goalAnim = { active: true, timer: 120, text: team };
-                logPlay("GOAL!"); resetBall();
+                resetBall();
             } else {
-                let def = inL ? "Liverpool" : "Visitors";
-                logPlay("BIG SAVE!"); currentTurn = def; ball.vx = inL ? 15 : -15;
+                let def = inL ? "Liverpool" : visitorTeamName;
+                logPlay(`WHAT A SAVE by the ${def} keeper!`);
+                stealFeedback = { display: true, status: "SAVED!", timer: 90 };
+                currentTurn = def; ball.vx = inL ? 15 : -15;
             }
         }
-    }
-}
-
-function updateTurnDisplay() {
-    const lfcEl = document.getElementById('lfc-score');
-    const visEl = document.getElementById('visitor-score');
-    if(lfcEl && visEl) {
-        lfcEl.parentElement.style.color = (currentTurn === "Liverpool") ? "#f1c40f" : "white";
-        visEl.parentElement.style.color = (currentTurn === "Visitors") ? "#f1c40f" : "white";
     }
 }
 
@@ -156,13 +190,10 @@ function draw() {
     // Possession Arrow
     ctx.save();
     ctx.translate(400, 50);
-    if (currentTurn === "Visitors") ctx.scale(-1, 1);
+    if (currentTurn === visitorTeamName) ctx.scale(-1, 1);
     ctx.strokeStyle = "#f1c40f"; ctx.lineWidth = 4; ctx.lineJoin = "round";
     ctx.beginPath(); ctx.moveTo(-30, 0); ctx.lineTo(30, 0); ctx.lineTo(20, -10);
     ctx.moveTo(30, 0); ctx.lineTo(20, 10); ctx.stroke();
-    ctx.scale(currentTurn === "Visitors" ? -1 : 1, 1);
-    ctx.fillStyle = "white"; ctx.font = "bold 12px Arial"; ctx.textAlign = "center";
-    ctx.fillText("ATTACK DIRECTION", 0, 25);
     ctx.restore();
 
     // Ball
@@ -189,11 +220,12 @@ function draw() {
 }
 
 function loop() {
+    if (!gameActive) return;
     updateClock();
     ball.x+=ball.vx; ball.y+=ball.vy; ball.vx*=FRICTION; ball.vy*=FRICTION;
     if(ball.x<0||ball.x>800||ball.y<0||ball.y>500) resetBall(true);
     ball.angle += (Math.abs(ball.vx)+Math.abs(ball.vy))*0.05;
-    checkScoring(); updateTurnDisplay(); draw(); requestAnimationFrame(loop);
+    checkScoring(); draw(); requestAnimationFrame(loop);
 }
 
 canvas.addEventListener('mousedown', (e) => {
@@ -207,8 +239,6 @@ window.addEventListener('mouseup', (e) => {
     if(!isDragging) return;
     const r = canvas.getBoundingClientRect();
     let vx = (e.clientX-r.left-startX)*0.25, vy = (e.clientY-r.top-startY)*0.25;
-    if((currentTurn==="Liverpool"&&vx<0)||(currentTurn==="Visitors"&&vx>0)){ logPlay("MUST MOVE FORWARD!"); isDragging=false; return; }
+    if((currentTurn==="Liverpool"&&vx<0)||(currentTurn===visitorTeamName&&vx>0)){ logPlay("MUST MOVE FORWARD!"); isDragging=false; return; }
     ball.vx=vx; ball.vy=vy; isDragging=false; handleSteal();
 });
-
-loop();
