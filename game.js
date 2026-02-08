@@ -60,7 +60,7 @@ let currentTurn = "Liverpool";
 let ball = { x: 400, y: 250, vx: 0, vy: 0, angle: 0 };
 let stealFeedback = { display: false, status: "", timer: 0 };
 let goalAnim = { active: false, timer: 0, text: "" };
-let matchSeconds = 10; 
+let matchSeconds = 180; 
 let stoppageSeconds = 0;
 let currentHalf = 1;
 let gameActive = false; 
@@ -140,7 +140,7 @@ function handleFoul(roll) {
     else type = "FOUL!";
     if (ball.x < 120 || ball.x > 680) isPenalty = true;
     if (isPenalty) { logPlay(`${type} - PENALTY KICK!`); setupPenaltyKick(); }
-    else { logPlay(`${type} - FREE FLICK.`); ball.vx = 0; ball.vy = 0; setTimeout(() => { isFoulPause = false; }, 1000); }
+    else { logPlay(`${type} - FREE FLICK.`); ball.vx = 0; ball.vy = 0; setTimeout(() => { isFoulPause = false; }, 00); }
     stealFeedback = { display: true, status: type, timer: 120 };
 }
 
@@ -216,7 +216,7 @@ function finishMatch() {
 }
 
 function startSecondHalf() {
-    currentHalf = 2; matchSeconds = 10; stoppageSeconds = 0;
+    currentHalf = 2; matchSeconds = 180; stoppageSeconds = 0;
     document.getElementById('stoppage-display').style.visibility = "hidden";
     document.getElementById('half-indicator').innerText = "2ND HALF";
     gameActive = true; resetBall(); playSound('whistle');
