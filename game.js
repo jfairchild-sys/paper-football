@@ -58,7 +58,7 @@ let lastX = 0, lastY = 0, lastTime = 0;
 const lfcRoster = ["Salah", "Van Dijk", "Alisson", "Mac Allister", "Alexander-Arnold"];
 const keeperMap = {
     "Liverpool": ["Alisson", "Becker", "Alisson the Brick Wall!"],
-    "Aston Villa": ["Emiliano Martínez"], "Man City": ["Ederson"],
+    "Aston Villa": ["Emiliano Martínez"], "Man City": ["Donnarumma"],
     "Man United": ["André Onana"], "Arsenal": ["David Raya"], "Chelsea": ["Robert Sánchez"]
 };
 
