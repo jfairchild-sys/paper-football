@@ -1,3 +1,4 @@
+let goalScored = false; // Prevents double-scoring
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const lfcLogo = new Image();
@@ -144,22 +145,53 @@ function setupPenaltyKick() {
 }
 
 function checkScoring() {
+    // Only check if a goal hasn't already been recorded for this play
+    if (goalScored) return;
+
     if (Math.abs(ball.vx) < 0.8 && Math.abs(ball.vy) < 0.8) {
         let inL = (ball.x < 120 && ball.y > 120 && ball.y < 380);
         let inR = (ball.x > 680 && ball.y > 120 && ball.y < 380);
+        
         if (inL || inR) {
+            // 50% chance to score (Finish) or be Saved
             if (Math.random() < 0.5) { 
+                goalScored = true; // LOCK: No more scoring until reset
                 playSound('goal');
+                
                 let team = inL ? visitorTeamName : "Liverpool";
-                if (inL) { score.player2++; document.getElementById('visitor-score').innerText = score.player2; currentTurn = "Liverpool"; }
-                else { score.player1++; document.getElementById('lfc-score').innerText = score.player1; currentTurn = visitorTeamName; }
+                if (inL) { 
+                    score.player2++; 
+                    document.getElementById('visitor-score').innerText = score.player2; 
+                } else { 
+                    score.player1++; 
+                    document.getElementById('lfc-score').innerText = score.player1; 
+                }
+                
                 goalAnim = { active: true, timer: 120, text: team };
-                logPlay(`GOAL FOR ${team.toUpperCase()}!`); resetBall();
+                logPlay(`GOAL!!! ${team.toUpperCase()} WINS IT!`);
+
+                if (isGoldenGoal) {
+                    // Golden Goal: Wait for animation then end match
+                    setTimeout(() => {
+                        isGoldenGoal = false;
+                        finishMatch();
+                        goalScored = false; // Reset for next match
+                    }, 2000);
+                } else {
+                    // Normal Goal: Wait for animation then reset ball
+                    setTimeout(() => {
+                        currentTurn = inL ? "Liverpool" : visitorTeamName;
+                        resetBall();
+                        goalScored = false; // UNLOCK for next play
+                    }, 2000);
+                }
             } else {
+                // SAVE LOGIC
                 let defTeam = inL ? "Liverpool" : visitorTeamName;
                 let names = keeperMap[defTeam] || ["The Keeper"];
-                logPlay(`SAVE BY ${names[0].toUpperCase()}!`);
-                currentTurn = defTeam; ball.vx = inL ? 15 : -15;
+                logPlay(`UNBELIEVABLE SAVE BY ${names[0].toUpperCase()}!`);
+                currentTurn = defTeam; 
+                ball.vx = inL ? 15 : -15; // Kick the ball out of the box
             }
         }
     }
