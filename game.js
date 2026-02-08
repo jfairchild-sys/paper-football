@@ -145,54 +145,62 @@ function setupPenaltyKick() {
 }
 
 function checkScoring() {
-    // Only check if a goal hasn't already been recorded for this play
     if (goalScored) return;
 
-    if (Math.abs(ball.vx) < 0.8 && Math.abs(ball.vy) < 0.8) {
-        let inL = (ball.x < 120 && ball.y > 120 && ball.y < 380);
-        let inR = (ball.x > 680 && ball.y > 120 && ball.y < 380);
+    // We check for the goal position regardless of how fast the ball is moving
+    let inL = (ball.x < 120 && ball.y > 120 && ball.y < 380);
+    let inR = (ball.x > 680 && ball.y > 120 && ball.y < 380);
         
-        if (inL || inR) {
-            // 50% chance to score (Finish) or be Saved
-            if (Math.random() < 0.5) { 
-                goalScored = true; // LOCK: No more scoring until reset
-                playSound('goal');
+    if (inL || inR) {
+        // If the ball is still moving fast, it's a 'live' shot
+        // If it's slow, it's a 'settled' shot. Both trigger the Keeper check now.
+        if (Math.random() < 0.5) { 
+            // GOAL LOGIC
+            goalScored = true; 
+            playSound('goal');
                 
-                let team = inL ? visitorTeamName : "Liverpool";
-                if (inL) { 
-                    score.player2++; 
-                    document.getElementById('visitor-score').innerText = score.player2; 
-                } else { 
-                    score.player1++; 
-                    document.getElementById('lfc-score').innerText = score.player1; 
-                }
-                
-                goalAnim = { active: true, timer: 120, text: team };
-                logPlay(`GOAL!!! ${team.toUpperCase()} WINS IT!`);
-
-                if (isGoldenGoal) {
-                    // Golden Goal: Wait for animation then end match
-                    setTimeout(() => {
-                        isGoldenGoal = false;
-                        finishMatch();
-                        goalScored = false; // Reset for next match
-                    }, 2000);
-                } else {
-                    // Normal Goal: Wait for animation then reset ball
-                    setTimeout(() => {
-                        currentTurn = inL ? "Liverpool" : visitorTeamName;
-                        resetBall();
-                        goalScored = false; // UNLOCK for next play
-                    }, 2000);
-                }
-            } else {
-                // SAVE LOGIC
-                let defTeam = inL ? "Liverpool" : visitorTeamName;
-                let names = keeperMap[defTeam] || ["The Keeper"];
-                logPlay(`UNBELIEVABLE SAVE BY ${names[0].toUpperCase()}!`);
-                currentTurn = defTeam; 
-                ball.vx = inL ? 15 : -15; // Kick the ball out of the box
+            let team = inL ? visitorTeamName : "Liverpool";
+            if (inL) { 
+                score.player2++; 
+                document.getElementById('visitor-score').innerText = score.player2; 
+            } else { 
+                score.player1++; 
+                document.getElementById('lfc-score').innerText = score.player1; 
             }
+                
+            goalAnim = { active: true, timer: 120, text: team };
+            logPlay(`GOAL FOR ${team.toUpperCase()}!`);
+
+            if (isGoldenGoal) {
+                setTimeout(() => {
+                    isGoldenGoal = false;
+                    finishMatch();
+                    goalScored = false;
+                }, 2000);
+            } else {
+                setTimeout(() => {
+                    currentTurn = inL ? "Liverpool" : visitorTeamName;
+                    resetBall();
+                    goalScored = false;
+                }, 2000);
+            }
+        } else {
+            // SAVE LOGIC - THE KEEPER STEPS UP
+            let defTeam = inL ? "Liverpool" : visitorTeamName;
+            let names = keeperMap[defTeam] || ["The Keeper"];
+            let keeperName = names[Math.floor(Math.random() * names.length)];
+            
+            logPlay(`UNBELIEVABLE SAVE BY ${keeperName.toUpperCase()}!`);
+            
+            // Visual feedback for the save
+            stealFeedback = { display: true, status: "SAVED!", timer: 60 };
+            
+            // Physics: Parry the ball back into play with power
+            ball.vx = inL ? 18 : -18; 
+            ball.vy = (Math.random() - 0.5) * 10; // Add some random angle to the parry
+            
+            // Change possession back to the defending team
+            currentTurn = defTeam;
         }
     }
 }
