@@ -46,7 +46,7 @@ let currentTurn = "Liverpool";
 let ball = { x: 400, y: 250, vx: 0, vy: 0, angle: 0 };
 let stealFeedback = { display: false, status: "", timer: 0 };
 let goalAnim = { active: false, timer: 0, text: "" };
-let matchSeconds = 30; 
+let matchSeconds = 10; 
 let stoppageSeconds = 0;
 let currentHalf = 1;
 let gameActive = false; 
@@ -236,7 +236,7 @@ function checkScoring() {
 }
 
 function startSecondHalf() {
-    currentHalf = 2; matchSeconds = 30; stoppageSeconds = 0;
+    currentHalf = 2; matchSeconds = 10; stoppageSeconds = 0;
     document.getElementById('stoppage-display').style.visibility = "hidden";
     document.getElementById('half-indicator').innerText = "2ND HALF";
     gameActive = true; 
